@@ -40,3 +40,9 @@ class DB:
 
         if self.autosave:
             self.con.commit()
+
+    def run(self, query, *args):
+        self.cur.execute(query, tuple(args))
+        if self.autosave:
+            self.con.commit()
+        return self.cur.fetchall()
