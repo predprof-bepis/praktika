@@ -40,5 +40,3 @@ class DB:
 
         if self.autosave:
             self.con.commit()
-
-db = DB()
