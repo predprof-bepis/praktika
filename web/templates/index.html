@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Анализ поступления</title>
-    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
-</head>
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet"></head>
 <body>
     <header>
         <h1>Анализ поступления абитуриентов</h1>
@@ -66,30 +65,29 @@
                 <form>
                     <h3>Отфильтровать данные по:</h3>
 
-                    <select value="program" selected="Направление">
-                        <option>Все</option>
-                        <option>Прикладная математика</option>
-                        <option>Информатика и вычислительная техника</option>
-                        <option>Инфокоммуникационные технологии и системы связи</option>
-                        <option>Информационная безопасность</option>
+                    <select name="program">
+                        <option value="all" selected>Все</option>
+                        <option value="pm">Прикладная математика</option>
+                        <option value="ivt">Информатика и вычислительная техника</option>
+                        <option value="itss">Инфокоммуникационные технологии и системы связи</option>
+                        <option value="ib">Информационная безопасность</option>
                     </select>
 
-                    <select value="accepted" selected="Все абитуриенты">
-                        <option>Все абитуриенты</option>
-                        <option>Только зачисленные</option>
-                        <option>Только незачисленные</option>
+                    <select name="accepted">
+                        <option value="all" selected>Все абитуриенты</option>
+                        <option value="enrolled">Только зачисленные</option>
+                        <option value="not_enrolled">Только незачисленные</option>
                     </select>
-
                     <button type="submit">Отфильтровать</button>
                 </form>
             </div>
 
-            <div class="search">
-                <h3>Поиск по ID абитуриента</h3>
-                <input type="number">
+            <form class="search">
+                <h3><label for="Id">Поиск по ID абитуриента</label></h3>
+                <input type="number" id="Id" name="Id">
                 <button type="submit">Искать</button>
-            </div>
-            
+            </form>          
+
             <table>
                 <tr>
                     <td class="headings">ПМ</td>

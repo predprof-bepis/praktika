@@ -22,7 +22,6 @@ main{
     margin: 0 auto;
     padding: 20px;
     background-color: white;
-    justify-content: center;
     display: flex;
     justify-content: center;
     align-items: flex-start;
@@ -66,7 +65,6 @@ td{
     font-family: sans-serif;
     background-color: aliceblue;
     border-radius: 5px;
-    margin: 5px;
     padding: 3px;
 }
 
@@ -127,4 +125,12 @@ button{
     border: 1px solid black;
     border-radius: 2px;
     padding: 1px;
+}
+
+input:focus{
+    border: 2px solid #005fcc;
+}
+
+button:hover{
+    background-color: rgb(160, 180, 198);
 }
