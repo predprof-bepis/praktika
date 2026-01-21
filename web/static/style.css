@@ -1,0 +1,130 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body{
+    width: 100%;
+    height: 100%;
+    background-color:rgb(89, 103, 114);
+}
+
+header{
+    color: aliceblue;
+    font-size: 30px;
+    text-align: center;
+    margin: 50px;
+}
+
+main{
+    width: 95%;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: white;
+    justify-content: center;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.actions{
+    height: 40px;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.actions *{
+    font-size: 18px;
+    font-family: sans-serif;
+    border: 2px solid black;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 5px;
+    color: black;
+    background-color: rgb(178, 184, 188);
+}
+
+.actions *:hover{
+    background-color: rgb(139, 144, 147);
+    color: white;
+    border: 2px solid white;
+}
+
+table{
+    background-color: rgb(168, 178, 187);
+    width: 800px;
+    height: 200px;
+    border: 3px solid aliceblue;
+    border-radius: 8px;
+    padding: 5px;
+    margin: 20px;
+}
+
+td{
+    font-size: 18px;
+    font-family: sans-serif;
+    background-color: aliceblue;
+    border-radius: 5px;
+    margin: 5px;
+    padding: 3px;
+}
+
+.headings{
+    background-color: rgb(63, 63, 132);
+    border-radius: 0;
+    color: aliceblue;
+    text-align: center;
+    font-size: 20px;
+    padding: 5px;
+} 
+
+.filter{
+    margin: 20px;
+    padding: 5px;
+}
+
+.search{
+    margin: 20px;
+    padding: 5px;
+}
+
+.list-header{
+    margin: 20px;
+    padding: 5px;
+}
+
+.list-header > h3{
+    font-size: 22px;
+    font-family: sans-serif;
+    margin-bottom: 3px;
+    text-align: center;
+}
+
+h3{
+    font-size: 20px;
+    font-family: sans-serif;
+}
+
+p{
+    font-size: 18px;
+    text-align: center;
+}
+
+select{
+    margin: 3px;
+    font-size: 16px;
+}
+
+input{
+    margin: 3px;
+    font-size: 16px;
+}
+
+button{
+    font-size: 16px;
+    background-color: rgb(181, 199, 215);
+    border: 1px solid black;
+    border-radius: 2px;
+    padding: 1px;
+}

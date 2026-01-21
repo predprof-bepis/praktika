@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анализ поступления</title>
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1>Анализ поступления абитуриентов</h1>
+    </header>
+    <main>
+        <div class="inner-main">
+            <div class="actions">
+                <a>Загрузить данные</a>
+                <a class="download-pdf">Скачать pdf-отчёт</a>
+            </div>
+
+            <div class="tables">
+                <table>
+                    <tr>
+                        <td class="headings">Дата обновления</td>
+                        <td class="headings">Направление</td>
+                        <td class="headings">Кол-во мест</td>
+                        <td class="headings">Общее кол-во абитуриентов</td>
+                        <td class="headings">Проходной балл</td>
+                    </tr>
+                    <tr>
+                        <td>20.01.2026</td>
+                        <td>ПМ</td>
+                        <td>40</td>
+                        <td>Нет данных</td>
+                        <td>Нет данных</td>
+                    </tr>
+                    <tr>
+                        <td>20.01.2026</td>
+                        <td>ИВТ</td>
+                        <td>50</td>
+                        <td>Нет данных</td>
+                        <td>Нет данных</td>
+                    </tr>
+                    <tr>
+                        <td>20.01.2026</td>
+                        <td>ИТСС</td>
+                        <td>30</td>
+                        <td>Нет данных</td>
+                        <td>Нет данных</td>
+                    </tr>
+                    <tr>
+                        <td>20.01.2026</td>
+                        <td>ИБ</td>
+                        <td>20</td>
+                        <td>Нет данных</td>
+                        <td>Нет данных</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="list-header">
+                <h3>Список абитуриентов</h3>
+                <p>Еще не зачисленные идут в порядке убывания шанса поступления.</p>
+            </div>
+
+            <div class="filter">
+                <form>
+                    <h3>Отфильтровать данные по:</h3>
+
+                    <select value="program" selected="Направление">
+                        <option>Все</option>
+                        <option>Прикладная математика</option>
+                        <option>Информатика и вычислительная техника</option>
+                        <option>Инфокоммуникационные технологии и системы связи</option>
+                        <option>Информационная безопасность</option>
+                    </select>
+
+                    <select value="accepted" selected="Все абитуриенты">
+                        <option>Все абитуриенты</option>
+                        <option>Только зачисленные</option>
+                        <option>Только незачисленные</option>
+                    </select>
+
+                    <button type="submit">Отфильтровать</button>
+                </form>
+            </div>
+
+            <div class="search">
+                <h3>Поиск по ID абитуриента</h3>
+                <input type="number">
+                <button type="submit">Искать</button>
+            </div>
+            
+            <table>
+                <tr>
+                    <td class="headings">ПМ</td>
+                    <td class="headings">ИВТ</td>
+                    <td class="headings">ИТСС</td>
+                    <td class="headings">ИБ</td>
+                </tr>
+                <tr>
+                    <td>Нет данных</td>
+                    <td>Нет данных</td>
+                    <td>Нет данных</td>
+                    <td>Нет данных</td>
+                </tr>
+                <tr>
+                    <td>Нет данных</td>
+                    <td>Нет данных</td>
+                    <td>Нет данных</td>
+                    <td>Нет данных</td>
+                </tr>
+            </table>
+        </div>
+    </main>
+</body>
+</html>
