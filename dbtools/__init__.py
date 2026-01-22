@@ -1,3 +1,9 @@
+# run_many быстрее, но он работает только с
+# INSERT
+# UPDATE
+# DELETE
+# REPLACE
+# Для всех остальных нужно использовать run
 import sqlite3
 
 
@@ -41,8 +47,35 @@ class DB:
         if self.autosave:
             self.con.commit()
 
+    # Работа с программами
+    def get_program(self, idx=None):
+        '''без аргумента - все записи,
+           с аргументом - id записи программы'''
+        if idx is None:
+            return self.run("SELECT * FROM programs;")
+        else:
+            return self.run("SELECT * FROM programs WHERE id = ?;", idx)
+
+    def add_programs(self, data):
+        '''в data указывать в списке записи
+           [<name>, <budget_seats>] - пример запись'''
+        self.run_many("INSERT INTO programs (name, budget_seats) VALUES (?, ?)", *data)
+
+    def update_program_by_id(self, data):
+        '''в дата указывать
+           [<name (можно менять)>, <budget seats (можно менять)>, id записи] - пример одной записи
+           подавать в списке'''
+        self.run_many("UPDATE programs SET name = ?, budget_seats = ? WHERE id = ?", *data)
+
+
     def run(self, query, *args):
         self.cur.execute(query, tuple(args))
+        if self.autosave:
+            self.con.commit()
+        return self.cur.fetchall()
+
+    def run_many(self, query, *args):
+        self.cur.executemany(query, tuple(args))
         if self.autosave:
             self.con.commit()
         return self.cur.fetchall()
