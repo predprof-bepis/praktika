@@ -32,6 +32,7 @@ class DB:
             budget_seats INTEGER NOT NULL
         );""")
         self.cur.execute("""CREATE TABLE IF NOT EXISTS applications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             applicant_id INTEGER NOT NULL,
             program_id INTEGER NOT NULL,
             date DATE NOT NULL,
@@ -49,8 +50,8 @@ class DB:
 
     # Работа с программами
     def get_program(self, idx=None):
-        '''без аргумента - все записи,
-           с аргументом - id записи программы'''
+        '''без аргумента - все заявления,
+           с аргументом числом - найти запись с id как аргумент'''
         if idx is None:
             return self.run("SELECT * FROM programs;")
         else:
@@ -62,10 +63,32 @@ class DB:
         self.run_many("INSERT INTO programs (name, budget_seats) VALUES (?, ?)", *data)
 
     def update_program_by_id(self, data):
-        '''в дата указывать
-           [<name (можно менять)>, <budget seats (можно менять)>, id записи] - пример одной записи
-           подавать в списке'''
+        '''в дата указывать\n
+           [<name (можно менять)>, <budget seats (можно менять)>, id записи] - пример одной записи\n
+           подавать в списке\n'''
         self.run_many("UPDATE programs SET name = ?, budget_seats = ? WHERE id = ?", *data)
+
+    # Работа с заявлениями
+    def get_application(self, idx=None):
+        '''без аргумента - все заявления,
+           с аргументом числом - найти запись с id как аргумент'''
+        if idx is None:
+            return self.run("SELECT * FROM applications;")
+        else:
+            return self.run("SELECT * FROM applications WHERE id = ?;", idx)
+
+    def add_application(self, data):
+        '''в дата указывать\n
+           [<applicant_id>, <program_id>, <date>, <priority>, <consent>] - пример одной записи\n
+           подавать в списке\n
+        '''
+        self.run_many("INSERT INTO programs (applicant_id, program_id, date, priority, consent) VALUES (?, ?, ?, ?, ?)", *data)
+
+    def update_application_by_id(self, data):
+        '''в дата указывать\n
+           [<applicant_id>, <program_id>, <date>, <priority>, <consent>, id записи] - пример одной записи\n
+           подавать в списке\n'''
+        self.run_many("UPDATE programs SET applicant_id = ?, program_id = ?, date = ?, priority = ?, consent = ? WHERE id = ?", *data)
 
 
     def run(self, query, *args):
