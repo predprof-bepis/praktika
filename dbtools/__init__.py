@@ -90,6 +90,28 @@ class DB:
            подавать в списке\n'''
         self.run_many("UPDATE programs SET applicant_id = ?, program_id = ?, date = ?, priority = ?, consent = ? WHERE id = ?", *data)
 
+    # Работа с заявителями
+    def get_applicant(self, idx=None):
+        '''без аргумента - все заявления,
+           с аргументом числом - найти запись с id как аргумент'''
+        if idx is None:
+            return self.run("SELECT * FROM applicants;")
+        else:
+            return self.run("SELECT * FROM applicants WHERE id = ?;", idx)
+
+    def add_applicant(self, data):
+        '''в дата указывать\n
+           [<physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>] - пример одной записи\n
+           подавать в списке\n
+        '''
+        self.run_many("INSERT INTO programs (physics_or_ict, russian, math, individual_achievements, total_score) VALUES (?, ?, ?, ?, ?)", *data)
+
+    def update_aplicant_by_id(self, data):
+        '''в дата указывать\n
+           [<physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>, id записи] - пример одной записи\n
+           подавать в списке\n'''
+        self.run_many("UPDATE programs SET physics_or_ict = ?, russian = ?, math = ?, individual_achievements = ?, total_score = ? WHERE id = ?", *data)
+
 
     def run(self, query, *args):
         self.cur.execute(query, tuple(args))
