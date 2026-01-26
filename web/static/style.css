@@ -27,13 +27,13 @@ main{
     align-items: flex-start;
 }
 
-.actions{
+nav{
     height: 40px;
     padding: 10px;
     border-radius: 5px;
 }
 
-.actions *{
+nav *{
     font-size: 18px;
     font-family: sans-serif;
     border: 2px solid black;
@@ -42,9 +42,10 @@ main{
     margin: 5px;
     color: black;
     background-color: rgb(178, 184, 188);
+    text-decoration:none;
 }
 
-.actions *:hover{
+nav *:hover{
     background-color: rgb(139, 144, 147);
     color: white;
     border: 2px solid white;
@@ -133,4 +134,21 @@ input:focus{
 
 button:hover{
     background-color: rgb(160, 180, 198);
+}
+
+.download{
+    margin: 20px;
+}
+
+.download *{
+    margin: 5px;
+}
+
+.download>button{
+    display: block;
+    text-align: center;
+    justify-self: center;
+    margin: 20px;
+    font-size: 25px;
+    padding: 5px;
 }
