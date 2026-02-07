@@ -62,10 +62,11 @@ def applications_data(db):
             already_applied = [program_id,]
             priority = program_id
             
-            for i in range(program_count):
-                program_id = 1
-                while program_id in already_applied:
-                    program_id += 1
+            for _ in range(program_count):
+                available = [p for p in range(1, 5) if p not in already_applied]
+                if not available:
+                    break
+                program_id = random.choice(available)
 
                 helper = db.run('''
                     INSERT INTO applications (applicant_id, program_id, date, priority, consent)
@@ -79,8 +80,12 @@ db = DB()
 db.create_tables()
 
 # чистка
+db.run('''DELETE FROM applications''')
+db.run('DELETE FROM sqlite_sequence WHERE name = "applications"')
 db.run('''DELETE FROM applicants''')
 db.run('DELETE FROM sqlite_sequence WHERE name = "applicants"')
+db.run('''DELETE FROM programs''')
+db.run('DELETE FROM sqlite_sequence WHERE name = "programs"')
 
 applicants_data(db)
 program_data(db)
