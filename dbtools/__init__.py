@@ -26,6 +26,10 @@ class DB:
             individual_achievements INTEGER NOT NULL,
             total_score INTEGER NOT NULL
         );""")
+        try:
+            self.cur.execute("ALTER TABLE applicants ADD COLUMN fio TEXT DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
         self.cur.execute("""CREATE TABLE IF NOT EXISTS programs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -111,11 +115,8 @@ class DB:
             return self.run("SELECT * FROM applicants WHERE id = ?;", idx)
 
     def add_applicant(self, data):
-        '''в дата указывать\n
-           [<physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>] - пример одной записи\n
-           подавать в списке\n
-        '''
-        self.run_many("INSERT INTO applicants (physics_or_ict, russian, math, individual_achievements, total_score) VALUES (?, ?, ?, ?, ?)", *data)
+        '''в data указывать [<fio>, <physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>]'''
+        self.run_many("INSERT INTO applicants (fio, physics_or_ict, russian, math, individual_achievements, total_score) VALUES (?, ?, ?, ?, ?, ?)", *data)
 
     def update_aplicant_by_id(self, data):
         '''в дата указывать\n

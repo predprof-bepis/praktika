@@ -1,129 +1,183 @@
 import sys
+import os
+import dbtools
+from dbtools import import_db
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QDateEdit, QLabel,
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QLabel, QComboBox, QPushButton, QMessageBox, QDateEdit, QFileDialog,
     QTableWidget, QTableWidgetItem, QHeaderView
 )
-from PySide6.QtCore import QDate, Qt
-from dbtools import DB
+from PySide6.QtCore import Qt, QDate
 
+db = dbtools.DB()
 
-class DateSelector(QWidget):
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        #окошко окошко
+        self.setWindowTitle("Выбор ОП и даты")
+        self.setGeometry(300, 300, 600, 500)
 
-        # === КЛАСТЕР ПЕРЕМЕННЫХ ===
-        self.window_title = "Выбор даты и ОП + фильтрация абитуриентов"
-        self.window_width = 1000
-        self.window_height = 800
-        self.date_format = "dd.MM.yyyy"
-
-        self.selected_program_id = None
-        self.selected_program_name = ""
-
-        # === ИНИЦИАЛИЗАЦИЯ БД ===
-        self.db = DB(filename="database.db", autosave=True)
-
-        # === ИНИЦИАЛИЗАЦИЯ ВИДЖЕТОВ ===
-        self.setWindowTitle(self.window_title)
-        self.resize(self.window_width, self.window_height)
-
-        layout = QVBoxLayout()
-
-        # Виджет выбора даты
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        layout = QVBoxLayout(central_widget)
+        title_label = QLabel("Выберите ОП и дату:")
+        title_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title_label)
+        op_layout = QHBoxLayout()
+        op_label = QLabel("ОП:")
+        self.op_combo = QComboBox()
+        self._fill_programs_combo()
+        op_layout.addWidget(op_label)
+        op_layout.addWidget(self.op_combo)
+        layout.addLayout(op_layout)
+        date_layout = QHBoxLayout()
+        date_label = QLabel("Дата:")
         self.date_edit = QDateEdit()
         self.date_edit.setCalendarPopup(True)
         self.date_edit.setDate(QDate.currentDate())
+        date_layout.addWidget(date_label)
+        date_layout.addWidget(self.date_edit)
+        layout.addLayout(date_layout)
 
-        # Метки
-        self.label_date = QLabel(f"Выбранная дата: {self.date_edit.date().toString(self.date_format)}")
-        self.label_program = QLabel("Выбранная ОП: не выбрана")
 
-        # Таблица программ
-        self.table_programs = QTableWidget()
-        self.load_programs_into_table()
+        self.apply_button = QPushButton("Применить")
+        self.apply_button.clicked.connect(self.on_apply)
+        layout.addWidget(self.apply_button)
 
-        # Таблица абитуриентов (изначально пустая)
-        self.table_applicants = QTableWidget()
-        self.table_applicants.setHorizontalHeaderLabels([
-            "ID", "Физика/ИКТ", "Русский", "Математика", "ИД", "Балл"
-        ])
-        self.table_applicants.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.dataset_button = QPushButton("Добавить данные ОПа а у меня тоже есть птички")
+        self.dataset_button.clicked.connect(self.dataset)
+        layout.addWidget(self.dataset_button)
 
-        # Подключение сигналов
-        self.date_edit.dateChanged.connect(self.on_date_changed)
-        self.table_programs.cellClicked.connect(self.on_program_selected)
+        self.clear_op_button = QPushButton("Очистить ОП в БД")
+        self.clear_op_button.clicked.connect(self.clear_programs_confirm)
+        layout.addWidget(self.clear_op_button)
 
-        # Добавление в макет
-        layout.addWidget(self.date_edit)
-        layout.addWidget(self.label_date)
-        layout.addWidget(self.label_program)
-        layout.addWidget(QLabel("Образовательные программы:"))
-        layout.addWidget(self.table_programs)
-        layout.addWidget(QLabel("Абитуриенты, подавшие на выбранную ОП:"))
-        layout.addWidget(self.table_applicants)
+        self.load_test_button = QPushButton("Загрузить пробные данные")
+        self.load_test_button.clicked.connect(self.load_test_data)
+        layout.addWidget(self.load_test_button)
 
-        self.setLayout(layout)
+        self.result_label = QLabel("")
+        self.result_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.result_label)
 
-    def load_programs_into_table(self):
-        """Загружает программы из БД."""
-        programs = self.db.get_program()
+        self.table = QTableWidget()
+        self.table.setColumnCount(5)
+        self.table.setHorizontalHeaderLabels(["№", "ФИО", "Балл", "Приоритет", "Согласие"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        layout.addWidget(self.table)
 
-        self.table_programs.setRowCount(len(programs))
-        self.table_programs.setColumnCount(3)
-        self.table_programs.setHorizontalHeaderLabels(["ID", "Название", "Бюджетные места"])
+    def _norm_date(self, s):
+        parts = str(s).strip().split(".")
+        if len(parts) != 3:
+            return str(s).strip()
+        try:
+            d, m, y = int(parts[0]), int(parts[1]), int(parts[2])
+            return f"{d:02d}.{m:02d}.{y:04d}"
+        except (ValueError, TypeError):
+            return str(s).strip()
 
-        for row_idx, row_data in enumerate(programs):
-            for col_idx, value in enumerate(row_data):
-                item = QTableWidgetItem(str(value))
-                item.setFlags(item.flags() & ~Qt.ItemIsEditable)
-                self.table_programs.setItem(row_idx, col_idx, item)
+    def on_apply(self):
+        selected_op = self.op_combo.currentText()
+        selected_date = self._norm_date(self.date_edit.date().toString("dd.MM.yyyy"))
 
-        self.table_programs.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        if "Выберите" in selected_op or not selected_op:
+            QMessageBox.warning(self, "Ошибка", "Выберите ОП")
+            return
 
-    def on_date_changed(self, date):
-        self.label_date.setText(f"Выбранная дата: {date.toString(self.date_format)}")
+        programs = db.get_program()
+        program_id = None
+        for row in programs:
+            if row[1] == selected_op:
+                program_id = row[0]
+                break
+        if program_id is None:
+            self.result_label.setText("ОП не найден в БД")
+            self.table.setRowCount(0)
+            return
 
-    def on_program_selected(self, row, column):
-        """Обрабатывает выбор ОП и загружает связанных абитуриентов."""
-        program_id = int(self.table_programs.item(row, 0).text())
-        program_name = self.table_programs.item(row, 1).text()
+        applications = db.get_application()
+        apps_for_op_date = [a for a in applications if a[2] == program_id and self._norm_date(a[3]) == selected_date]
+        rows_data = []
+        for app in apps_for_op_date:
+            applicant_id = app[1]
+            priority = app[4]
+            consent = app[5]
+            applicant_rows = db.get_applicant(applicant_id)
+            if applicant_rows:
+                r = applicant_rows[0]
+                total_score = r[5]
+                fio = r[6] if len(r) > 6 else ""
+            else:
+                total_score = 0
+                fio = ""
+            rows_data.append((fio, total_score, priority, consent))
+        rows_data.sort(key=lambda x: x[1], reverse=True)
 
-        self.selected_program_id = program_id
-        self.selected_program_name = program_name
-        self.label_program.setText(f"Выбранная ОП: {program_name} (ID: {program_id})")
+        self.table.setRowCount(len(rows_data))
+        for i, (fio, score, priority, consent) in enumerate(rows_data, 1):
+            self.table.setItem(i - 1, 0, QTableWidgetItem(str(i)))
+            self.table.setItem(i - 1, 1, QTableWidgetItem(fio))
+            self.table.setItem(i - 1, 2, QTableWidgetItem(str(score)))
+            self.table.setItem(i - 1, 3, QTableWidgetItem(str(priority)))
+            self.table.setItem(i - 1, 4, QTableWidgetItem(str(consent)))
+        self.result_label.setText(f"ОП: {selected_op}\nДата: {selected_date}\nЗаявлений: {len(rows_data)}")
 
-        # Загрузка абитуриентов, подавших на эту программу
-        self.load_applicants_for_program(program_id)
+    def load_test_data(self):
+        db.cur.execute("DELETE FROM applications")
+        db.cur.execute("DELETE FROM applicants")
+        db.cur.execute("DELETE FROM programs")
+        db.con.commit()
+        base = os.path.dirname(os.path.abspath(__file__))
+        programs_path = os.path.join(base, "programs.csv")
+        if os.path.isfile(programs_path):
+            imp = import_db.Importer(db, import_db.Table.programs, import_db.Mode.csv)
+            imp.import_db(programs_path)
+        applications_path = os.path.join(base, "applications.csv")
+        if os.path.isfile(applications_path):
+            import_db.import_applications_fio(db, applications_path)
+        self._fill_programs_combo()
+        if self.op_combo.count() > 0:
+            self.op_combo.setCurrentIndex(0)
+            self.date_edit.setDate(QDate(2025, 2, 7))
+            self.on_apply()
+        else:
+            self.table.setRowCount(0)
+            self.result_label.setText("Пробные данные загружены из CSV.")
 
-    def load_applicants_for_program(self, program_id):
-        """Загружает абитуриентов, связанных с program_id через таблицу applications."""
-        # SQL-запрос: соединяем applicants и applications
-        query = """
-        SELECT a.id, a.physics_or_ict, a.russian, a.math, 
-               a.individual_achievements, a.total_score
-        FROM applicants a
-        JOIN applications app ON a.id = app.applicant_id
-        WHERE app.program_id = ?
-        ORDER BY a.total_score DESC
-        """
-        # Выполняем запрос через ваш метод run (он принимает *args)
-        rows = self.db.run(query, program_id)
+    def _fill_programs_combo(self):
+        self.op_combo.clear()
+        rows = db.get_program()
+        names = [str(row[1]) for row in rows]
+        self.op_combo.addItems(names)
 
-        # Обновляем таблицу
-        self.table_applicants.setRowCount(len(rows))
-        self.table_applicants.setColumnCount(6)
+    def dataset(self):
+        files, _ = QFileDialog.getOpenFileNames(
+            self, "Выбор CSV файлов", "", "CSV (*.csv);;Все файлы (*)"
+        )
+        if files:
+            importer = import_db.Importer(db, import_db.Table.programs, import_db.Mode.csv)
+            for i in files:
+                importer.import_db(i)
+            self._fill_programs_combo()
+            self.result_label.setText(f"Добавлено файлов: {len(files)}\nСписок ОП обновлён.")
 
-        for row_idx, row_data in enumerate(rows):
-            for col_idx, value in enumerate(row_data):
-                item = QTableWidgetItem(str(value))
-                item.setFlags(item.flags() & ~Qt.ItemIsEditable)
-                self.table_applicants.setItem(row_idx, col_idx, item)
+    def clear_programs_confirm(self):
+        r = QMessageBox.question(
+            self, "Подтверждение",
+            "Точно уверены? Все ОП будут удалены из базы данных.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        if r == QMessageBox.Yes:
+            db.run("DELETE FROM programs")
+            self._fill_programs_combo()
+            self.result_label.setText("Список ОП очищен.")
 
-        self.table_applicants.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = DateSelector()
+    window = MainWindow()
     window.show()
     sys.exit(app.exec())
