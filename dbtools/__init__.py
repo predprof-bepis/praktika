@@ -82,13 +82,13 @@ class DB:
            [<applicant_id>, <program_id>, <date>, <priority>, <consent>] - пример одной записи\n
            подавать в списке\n
         '''
-        self.run_many("INSERT INTO programs (applicant_id, program_id, date, priority, consent) VALUES (?, ?, ?, ?, ?)", *data)
+        self.run_many("INSERT INTO applications (applicant_id, program_id, date, priority, consent) VALUES (?, ?, ?, ?, ?)", *data)
 
     def update_application_by_id(self, data):
         '''в дата указывать\n
            [<applicant_id>, <program_id>, <date>, <priority>, <consent>, id записи] - пример одной записи\n
            подавать в списке\n'''
-        self.run_many("UPDATE programs SET applicant_id = ?, program_id = ?, date = ?, priority = ?, consent = ? WHERE id = ?", *data)
+        self.run_many("UPDATE applications SET applicant_id = ?, program_id = ?, date = ?, priority = ?, consent = ? WHERE id = ?", *data)
 
     # Работа с заявителями
     def get_applicant(self, idx=None):
@@ -104,13 +104,13 @@ class DB:
            [<physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>] - пример одной записи\n
            подавать в списке\n
         '''
-        self.run_many("INSERT INTO programs (physics_or_ict, russian, math, individual_achievements, total_score) VALUES (?, ?, ?, ?, ?)", *data)
+        self.run_many("INSERT INTO applicants (physics_or_ict, russian, math, individual_achievements, total_score) VALUES (?, ?, ?, ?, ?)", *data)
 
     def update_aplicant_by_id(self, data):
         '''в дата указывать\n
            [<physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>, id записи] - пример одной записи\n
            подавать в списке\n'''
-        self.run_many("UPDATE programs SET physics_or_ict = ?, russian = ?, math = ?, individual_achievements = ?, total_score = ? WHERE id = ?", *data)
+        self.run_many("UPDATE applicants SET physics_or_ict = ?, russian = ?, math = ?, individual_achievements = ?, total_score = ? WHERE id = ?", *data)
 
 
     def run(self, query, *args):
