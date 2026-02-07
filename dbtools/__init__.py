@@ -20,7 +20,6 @@ class DB:
     def create_tables(self):
         self.cur.execute("""CREATE TABLE IF NOT EXISTS applicants (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            fio TEXT NOT NULL,
             physics_or_ict INTEGER NOT NULL,
             russian INTEGER NOT NULL,
             math INTEGER NOT NULL,
@@ -38,7 +37,7 @@ class DB:
             program_id INTEGER NOT NULL,
             date DATE NOT NULL,
             priority INTEGER NOT NULL CHECK (priority BETWEEN 1 AND 4),
-            consent INTEGER NOT NULL,
+            consent BOOLEAN NOT NULL,
         
             UNIQUE (applicant_id, program_id, date),
         
@@ -112,14 +111,14 @@ class DB:
             return self.run("SELECT * FROM applicants WHERE id = ?;", idx)
 
     def add_applicant(self, data):
-        '''в data указывать [<fio>, <physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>]'''
-        self.run_many("INSERT INTO applicants (fio, physics_or_ict, russian, math, individual_achievements, total_score) VALUES (?, ?, ?, ?, ?, ?)", *data)
+        '''в data указывать [<physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>]'''
+        self.run_many("INSERT INTO applicants (physics_or_ict, russian, math, individual_achievements, total_score) VALUES (?, ?, ?, ?, ?, ?)", *data)
 
     def update_aplicant_by_id(self, data):
         '''в дата указывать\n
-           [<fio>, <physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>, id записи] - пример одной записи\n
+           [<physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>, id записи] - пример одной записи\n
            подавать в списке\n'''
-        self.run_many("UPDATE applicants SET fio = ?, physics_or_ict = ?, russian = ?, math = ?, individual_achievements = ?, total_score = ? WHERE id = ?", *data)
+        self.run_many("UPDATE applicants SET physics_or_ict = ?, russian = ?, math = ?, individual_achievements = ?, total_score = ? WHERE id = ?", *data)
 
 
     def run(self, query, *args):
