@@ -39,7 +39,7 @@ class DB:
             priority INTEGER NOT NULL CHECK (priority BETWEEN 1 AND 4),
             consent INTEGER NOT NULL,
         
-            PRIMARY KEY (applicant_id, program_id, date),
+            UNIQUE (applicant_id, program_id, date),
         
             FOREIGN KEY (applicant_id) REFERENCES applicants(id),
             FOREIGN KEY (program_id) REFERENCES programs(id)

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Скачать pdf-отчет</title>
+    <link rel="stylesheet" href="../static/style.css">
+</head>
+<body>
+    <header>
+        <h1>Скачать PDF-отчет</h1>
+    </header>
+    <main>
+        <div class="inner-main">
+            <nav>
+                <a href="./">На главную</a>
+            </nav>
+            <form class="download">
+                <h2>Выберите дату и ОП*, по которой хотите скачать отчет:</h2>
+                
+                <select class="date">
+                    <option value="20.01.2026">20.01.2026 (последнее обновление)</option>
+                </select>
+
+                <select name="program">
+                    <option value="all" selected>Все</option>
+                    <option value="pm">Прикладная математика</option>
+                    <option value="ivt">Информатика и вычислительная техника</option>
+                    <option value="itss">Инфокоммуникационные технологии и системы связи</option>
+                    <option value="ib">Информационная безопасность</option>
+                </select>
+
+                <button type="submit">Скачать</button>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
