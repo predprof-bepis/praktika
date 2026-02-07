@@ -60,7 +60,18 @@ class DB:
     def add_programs(self, data):
         '''в data указывать в списке записи
            [<name>, <budget_seats>] - пример запись'''
+        if not data:
+            return
         self.run_many("INSERT INTO programs (name, budget_seats) VALUES (?, ?)", *data)
+        self.remove_duplicate_programs()
+
+    def remove_duplicate_programs(self):
+        self.cur.execute("""DELETE FROM programs WHERE id IN (
+            SELECT p1.id FROM programs p1
+            INNER JOIN programs p2 ON p1.name = p2.name AND p1.id > p2.id
+        )""")
+        if self.autosave:
+            self.con.commit()
 
     def update_program_by_id(self, data):
         '''в дата указывать\n
