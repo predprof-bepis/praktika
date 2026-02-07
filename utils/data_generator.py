@@ -31,7 +31,7 @@ def program_data(db):
 
 def applicants_data(db):
     for i in range(1, 101):
-        helper = db.run('''
+        db.run('''
             INSERT INTO applicants (physics_or_ict, russian, math, individual_achievements, total_score) 
             VALUES(CAST(abs(random()) % 100 + 1 AS INTEGER), 
                 CAST(abs(random()) % 100 + 1 AS INTEGER), 
@@ -40,21 +40,23 @@ def applicants_data(db):
                     1)    
             ''')
 
-    helper = db.run('''
+    db.run('''
         UPDATE applicants
         SET total_score = physics_or_ict + russian + math + individual_achievements
     ''')
 
 
 def applications_data(db):
+    dates = ["2026-08-04", "2026-08-03", "2026-08-03"]
     for i in range(1, 101):
         program_id = random.randint(1, 4)
         many_programs = random.randint(0, 1)
         consent = random.randint(0, 1)
-        helper = db.run('''
+        date = random.choice(dates)
+        db.run('''
             INSERT INTO applications (applicant_id, program_id, date, priority, consent) 
-            VALUES (?, ?, "2026-08-04", ?, ?)
-        ''', i, program_id, program_id, consent) # пока что дата только 04.08
+            VALUES (?, ?, ?, ?, ?)
+        ''', i, program_id, date, program_id, consent) # пока что дата только 04.08
 
         if many_programs == 1:
             program_count = random.randint(1, 3) # на сколько программ подаемся
@@ -68,10 +70,10 @@ def applications_data(db):
                     break
                 program_id = random.choice(available)
 
-                helper = db.run('''
+                db.run('''
                     INSERT INTO applications (applicant_id, program_id, date, priority, consent)
-                    VALUES (?, ?, "2026-08-04", ?, ?)
-                ''', i, program_id, priority, consent)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', i, program_id, date, priority, consent)
 
                 already_applied.append(program_id)
 
