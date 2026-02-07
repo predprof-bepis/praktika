@@ -21,16 +21,25 @@ class DBManager:
             "ib": 20
         }
 
-    def db_filter(self, programs: list, date="2026-08-04") -> dict:
+    def db_filter(self, programs: list, date="2026-08-04", onlyId=False) -> dict:
         res = dict()
         for program in programs:
-            res[program] = self.db.run('''
-                    SELECT applicant_id, consent, total_score FROM applications
-                    LEFT JOIN applicants ON applications.applicant_id = applicants.id
-                    WHERE date = ? AND
-                    program_id = (
-                        SELECT id FROM programs
-                        WHERE name = ?
+            if not onlyId:
+                res[program] = self.db.run('''
+                        SELECT applicant_id, consent, total_score FROM applications
+                        LEFT JOIN applicants ON applications.applicant_id = applicants.id
+                        WHERE date = ? AND
+                        program_id = (
+                            SELECT id FROM programs
+                            WHERE name = ?
+                        )
+                    ''', date, program)
+            else:
+                res[program] = self.db.run('''
+                    SELECT applicant_id FROM applications
+                    WHERE date = ? AND program_id = (
+                        SELECT id FROM programs 
+                        WHERE name = ?                       
                     )
                 ''', date, program)
             
