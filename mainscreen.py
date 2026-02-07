@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
         self.clear_op_button.clicked.connect(self.clear_programs_confirm)
         layout.addWidget(self.clear_op_button)
 
-        self.load_test_button = QPushButton("Загрузить пробные данные")
+        self.load_test_button = QPushButton("Загрузить данные")
         self.load_test_button.clicked.connect(self.load_test_data)
         layout.addWidget(self.load_test_button)
 
@@ -63,7 +63,7 @@ class MainWindow(QMainWindow):
 
         self.table = QTableWidget()
         self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["№", "ФИО", "Балл", "Приоритет", "Согласие"])
+        self.table.setHorizontalHeaderLabels(["№", "ID", "Балл", "Приоритет", "Согласие"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.table)
 
@@ -122,12 +122,17 @@ class MainWindow(QMainWindow):
             self.table.setItem(i - 1, 3, QTableWidgetItem(str(priority)))
             self.table.setItem(i - 1, 4, QTableWidgetItem(str(consent)))
         self.result_label.setText(f"ОП: {selected_op}\nДата: {selected_date}\nЗаявлений: {len(rows_data)}")
-
+#табличка
     def load_test_data(self):
-        db.cur.execute("DELETE FROM applications")
-        db.cur.execute("DELETE FROM applicants")
-        db.cur.execute("DELETE FROM programs")
-        db.con.commit()
+        files, _ = QFileDialog.getOpenFileNames(
+            self, "Выбор CSV файлов", "", "CSV (*.csv);;Все файлы (*)"
+        )
+        if files:
+            importer = import_db.Importer(db, import_db.Table.applications, import_db.Mode.csv)
+            for i in files:
+                importer.import_db(i)
+            self._fill_programs_combo()
+            self.result_label.setText(f"Добавлено файлов: {len(files)}\nСписок абитуриентов обновлён.")
         base = os.path.dirname(os.path.abspath(__file__))
         programs_path = os.path.join(base, "programs.csv")
         if os.path.isfile(programs_path):
