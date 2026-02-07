@@ -54,7 +54,7 @@ def applications_data(db):
         helper = db.run('''
             INSERT INTO applications (applicant_id, program_id, date, priority, consent) 
             VALUES (?, ?, "2026-08-04", ?, ?)
-        ''', (i, program_id, program_id, consent)) # пока что дата только 04.08
+        ''', i, program_id, program_id, consent) # пока что дата только 04.08
 
         if many_programs == 1:
             program_count = random.randint(1, 3) # на сколько программ подаемся
@@ -70,7 +70,7 @@ def applications_data(db):
                 helper = db.run('''
                     INSERT INTO applications (applicant_id, program_id, date, priority, consent)
                     VALUES (?, ?, "2026-08-04", ?, ?)
-                ''', (i, program_id, priority, consent))
+                ''', i, program_id, priority, consent)
 
                 already_applied.append(program_id)
 
