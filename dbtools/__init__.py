@@ -20,16 +20,13 @@ class DB:
     def create_tables(self):
         self.cur.execute("""CREATE TABLE IF NOT EXISTS applicants (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fio TEXT NOT NULL,
             physics_or_ict INTEGER NOT NULL,
             russian INTEGER NOT NULL,
             math INTEGER NOT NULL,
             individual_achievements INTEGER NOT NULL,
             total_score INTEGER NOT NULL
         );""")
-        try:
-            self.cur.execute("ALTER TABLE applicants ADD COLUMN fio TEXT DEFAULT ''")
-        except sqlite3.OperationalError:
-            pass
         self.cur.execute("""CREATE TABLE IF NOT EXISTS programs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -120,9 +117,9 @@ class DB:
 
     def update_aplicant_by_id(self, data):
         '''в дата указывать\n
-           [<physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>, id записи] - пример одной записи\n
+           [<fio>, <physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>, id записи] - пример одной записи\n
            подавать в списке\n'''
-        self.run_many("UPDATE applicants SET physics_or_ict = ?, russian = ?, math = ?, individual_achievements = ?, total_score = ? WHERE id = ?", *data)
+        self.run_many("UPDATE applicants SET fio = ?, physics_or_ict = ?, russian = ?, math = ?, individual_achievements = ?, total_score = ? WHERE id = ?", *data)
 
 
     def run(self, query, *args):
