@@ -114,7 +114,7 @@ class DB:
         '''в data указывать [<physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>]'''
         self.run_many("INSERT INTO applicants (physics_or_ict, russian, math, individual_achievements, total_score) VALUES (?, ?, ?, ?, ?, ?)", *data)
 
-    def update_aplicant_by_id(self, data):
+    def update_applicant_by_id(self, data):
         '''в дата указывать\n
            [<physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>, id записи] - пример одной записи\n
            подавать в списке\n'''
