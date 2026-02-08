@@ -27,7 +27,7 @@ def _register_cyrillic_font():
                 return font_name
             except Exception:
                 continue
-    return "Helvetica"  # fallback без кириллицы
+    return "Helvetica"
 
 
 class PDFGenerator:
@@ -42,14 +42,14 @@ class PDFGenerator:
         self.static_dir = Path("static")
         self.static_dir.mkdir(exist_ok=True)
 
-    def generate_pdf(self, program, pdf_filename, date=None):
+    def generate_pdf(self, pdf_filename, date=None):
         if date is None:
             date = datetime.now()
         if not isinstance(date, datetime):
             try:
                 date = datetime.strptime(date, "%Y-%m-%d")
-            except:
-                raise TypeError("date must be datetime")
+            except Exception:
+                raise TypeError("date must be datetime or string YYYY-MM-DD")
         programs_df = pd.DataFrame(
             self.db.get_program(),
             columns=["id", "name", "budget_seats"]
@@ -69,17 +69,25 @@ class PDFGenerator:
             self.db.get_application(),
             columns=["id", "applicant_id", "program_id", "date", "priority", "consent"]
         )
+        date_str = date.strftime("%Y-%m-%d")
+        applications_on_date = applications_df[applications_df["date"].astype(str) == date_str]
 
         apps_full = (
+            applications_on_date
+            .merge(applicants_df, left_on="applicant_id", right_on="id")
+            .merge(programs_df, left_on="program_id", right_on="id", suffixes=("", "_program"))
+        )
+        apps_full_all_dates = (
             applications_df
             .merge(applicants_df, left_on="applicant_id", right_on="id")
             .merge(programs_df, left_on="program_id", right_on="id", suffixes=("", "_program"))
         )
 
-        if program is not None:
-            if isinstance(program, str):
-                program = [program]
-            programs_df = programs_df[programs_df["name"].isin(program)]
+        programs_full = pd.DataFrame(
+            self.db.get_program(),
+            columns=["id", "name", "budget_seats"]
+        )
+        enrollment = self._compute_global_enrollment(apps_full, programs_full)
 
         doc = SimpleDocTemplate(pdf_filename, pagesize=A4)
         story = []
@@ -111,15 +119,16 @@ class PDFGenerator:
             ))
             story.append(Spacer(1, 10))
 
-            graph_path = self.plot_dynamics(apps_full, prog_id, prog_name)
+            graph_path = self.plot_dynamics(apps_full_all_dates, prog_id, prog_name)
 
             story.append(Image(str(graph_path), width=400, height=250))
             story.append(Spacer(1, 15))
 
-            table_rows = self.enrolled_list_with_status(apps_full, prog_id, budget_seats)
-            enrolled_only = [r for r in table_rows if r["accepted"]]
+            table_rows = self.enrolled_list_with_status(
+                apps_full, prog_id, budget_seats, enrollment
+            )
+            enrolled_only = enrollment.get("by_program", {}).get(prog_id, [])
 
-            # Список зачисленных по ОП
             story.append(Paragraph("<b>Список зачисленных</b>", self.styles["Heading2"]))
             story.append(Spacer(1, 6))
             if enrolled_only:
@@ -145,10 +154,9 @@ class PDFGenerator:
                 story.append(Paragraph("Нет зачисленных.", self.styles["Normal"]))
             story.append(Spacer(1, 15))
 
-            # Статистика по приоритетам
             story.append(Paragraph("<b>Статистика по приоритетам</b>", self.styles["Heading2"]))
             story.append(Spacer(1, 6))
-            prio_stats = self.priority_stats(apps_full, prog_id, budget_seats)
+            prio_stats = self.priority_stats(apps_full, prog_id, enrollment)
             prio_data = [[
                 Paragraph("Приоритет", self.styles["Normal"]),
                 Paragraph("Подано заявлений", self.styles["Normal"]),
@@ -169,7 +177,6 @@ class PDFGenerator:
             story.append(prio_table)
             story.append(Spacer(1, 15))
 
-            # Таблица: все с согласием + принят/нет
             story.append(Paragraph("<b>Абитуриенты с согласием (принят / не принят)</b>", self.styles["Heading2"]))
             story.append(Spacer(1, 6))
             table_data = [[
@@ -237,7 +244,39 @@ class PDFGenerator:
         ].to_dict("records")
 
     @staticmethod
-    def enrolled_list_with_status(apps_full, program_id, budget):
+    def _compute_global_enrollment(apps_full, programs_df):
+
+        budget = programs_df.set_index("id")["budget_seats"].to_dict()
+        with_consent = apps_full[apps_full["consent"] == 1].copy()
+        enrolled_applicant = {}
+        by_program = {pid: [] for pid in programs_df["id"]}
+        places_left = budget.copy()
+
+        for priority in [1, 2, 3, 4]:
+            cand = with_consent[
+                (with_consent["priority"] == priority) &
+                (~with_consent["applicant_id"].isin(enrolled_applicant))
+            ]
+            cand = cand.sort_values("total_score", ascending=False)
+            for _, row in cand.iterrows():
+                aid, pid = row["applicant_id"], row["program_id"]
+                if aid in enrolled_applicant:
+                    continue
+                if places_left.get(pid, 0) <= 0:
+                    continue
+                enrolled_applicant[aid] = pid
+                by_program[pid].append({
+                    "applicant_id": aid,
+                    "total_score": row["total_score"],
+                    "priority": row["priority"],
+                })
+                places_left[pid] -= 1
+
+        return {"by_program": by_program, "applicant_to_program": enrolled_applicant}
+
+    @staticmethod
+    def enrolled_list_with_status(apps_full, program_id, budget, enrollment):
+        applicant_to_program = enrollment.get("applicant_to_program", {})
         with_consent = (
             apps_full[
                 (apps_full["program_id"] == program_id) &
@@ -247,22 +286,26 @@ class PDFGenerator:
             .reset_index(drop=True)
         )
         rows = []
-        for k, (_, row) in enumerate(with_consent.iterrows()):
+        for _, row in with_consent.iterrows():
+            aid = row["applicant_id"]
             has_consent = row["consent"] == 1
-            in_budget = k < budget
+            accepted_here = applicant_to_program.get(aid) == program_id
             rows.append({
-                "applicant_id": row["applicant_id"],
+                "applicant_id": aid,
                 "total_score": row["total_score"],
                 "priority": row["priority"],
-                "accepted": has_consent and in_budget,
+                "accepted": has_consent and accepted_here,
             })
         return rows
 
     @staticmethod
-    def priority_stats(apps_full, program_id, budget):
+    def priority_stats(apps_full, program_id, enrollment):
         prog = apps_full[apps_full["program_id"] == program_id]
         applied = prog.groupby("priority").size().reindex([1, 2, 3, 4], fill_value=0)
-        with_consent = prog[prog["consent"] == 1].sort_values("total_score", ascending=False)
-        enrolled = with_consent.head(budget)
-        enrolled_by_prio = enrolled.groupby("priority").size().reindex([1, 2, 3, 4], fill_value=0)
+        by_program = enrollment.get("by_program", {}).get(program_id, [])
+        if by_program:
+            enrolled_df = pd.DataFrame(by_program)
+            enrolled_by_prio = enrolled_df.groupby("priority").size().reindex([1, 2, 3, 4], fill_value=0)
+        else:
+            enrolled_by_prio = pd.Series({p: 0 for p in [1, 2, 3, 4]})
         return {"applied": applied, "enrolled": enrolled_by_prio}
