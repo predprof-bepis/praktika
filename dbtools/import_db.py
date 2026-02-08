@@ -30,6 +30,7 @@ class Importer:
             self.db.add_programs(_rows_programs(data))
         elif self.table == Table.applications:
             data = data[1:] if _is_header(data[0]) else data
+            print(data)
             self.db.add_application(_rows_application(data))
         elif self.table == Table.applicants:
             data = data[1:] if _is_header(data[0]) else data
@@ -89,9 +90,10 @@ def _rows_applicant(rows):
             try:
                 return [int(row[0]), int(row[1]), int(row[2]), int(row[3]), int(row[4])]
             except (ValueError, TypeError):
-                return None
+                continue
         elif len(row) == 4:
             try:
                 return [int(row[0]), int(row[1]), int(row[2]), int(row[3]), sum([int(row[0]), int(row[1]), int(row[2]), int(row[3])])]
             except (ValueError, TypeError):
-                return None
+                continue
+    return final
