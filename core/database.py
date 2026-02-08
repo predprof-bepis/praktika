@@ -81,15 +81,17 @@ class DBManager:
             program_data = sorted(program_data, key=cmp_to_key(self._compare_applicants), reverse=True)
 
             accepted = self.count_accepted(program_data)
-            if accepted >= self.places_count[program]:
-                res[program] = 0 # все места уже заняты
+            if not program_data:
+                res[program] = 0
                 continue
-            else:
-                try: # подают больше заявок, чем мест
-                    score = program_data[self.places_count[program] - 1][2]
-                except IndexError:
-                    score = program_data[-1][2]
-
+            if accepted >= self.places_count.get(program, 0):
+                res[program] = 0
+                continue
+            try:
+                idx = self.places_count.get(program, 0) - 1
+                score = program_data[min(idx, len(program_data) - 1)][2]
+            except (IndexError, KeyError):
+                score = program_data[-1][2]
             res[program] = score
 
         return res

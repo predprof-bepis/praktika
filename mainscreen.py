@@ -10,6 +10,13 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QDate
 import csv
 
+try:
+    from core import database
+    import pdfgenerator
+    _has_pdf = True
+except ImportError:
+    _has_pdf = False
+
 db = dbtools.DB()
 
 
@@ -89,6 +96,11 @@ class MainWindow(QMainWindow):
         self.theme_button.clicked.connect(self.toggle_theme)
         layout.addWidget(self.theme_button)
 
+        self.pdf_report_button = QPushButton("Сформировать отчёт (PDF)")
+        self.pdf_report_button.clicked.connect(self.generate_report)
+        self.pdf_report_button.setEnabled(_has_pdf)
+        layout.addWidget(self.pdf_report_button)
+
         self.result_label = QLabel("")
         self.result_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.result_label)
@@ -98,6 +110,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.table)
 
         self.is_light_theme = True
+        if _has_pdf:
+            self.dbman = database.DBManager()
         self._apply_theme()
 
     def toggle_theme(self):
@@ -179,6 +193,42 @@ class MainWindow(QMainWindow):
             self.result_label.setStyleSheet("QLabel { background-color: #37474f; border-radius: 8px; padding: 12px; font-size: 12px; color: #eceff1; }")
             self.title_label.setStyleSheet("QLabel { font-size: 18px; font-weight: bold; color: #90caf9; padding: 8px 0; }")
 
+    def generate_report(self):
+        if not _has_pdf:
+            QMessageBox.warning(self, "Ошибка", "Модуль pdfgenerator не найден.")
+            return
+        selected_op = self.op_combo.currentText()
+        if "Выберите" in selected_op or not selected_op:
+            QMessageBox.warning(self, "Ошибка", "Выберите ОП.")
+            return
+        selected_date = self._norm_date(self.date_edit.date().toString("dd.MM.yyyy"))
+        parts = selected_date.split(".")
+        if len(parts) != 3:
+            QMessageBox.warning(self, "Ошибка", "Некорректная дата.")
+            return
+        try:
+            d, m, y = int(parts[0]), int(parts[1]), int(parts[2])
+            date_ymd = f"{y:04d}-{m:02d}-{d:02d}"
+        except (ValueError, TypeError):
+            QMessageBox.warning(self, "Ошибка", "Некорректная дата.")
+            return
+        path, _ = QFileDialog.getSaveFileName(self, "Сохранить отчёт", "", "PDF (*.pdf)")
+        if not path:
+            return
+        if not path.lower().endswith(".pdf"):
+            path += ".pdf"
+        for row in db.get_program():
+            if len(row) >= 3:
+                self.dbman.places_count[str(row[1])] = int(row[2])
+        try:
+            gen = pdfgenerator.PDFGenerator(db, self.dbman)
+            gen.generate_pdf(selected_op, path, date_ymd)
+            QMessageBox.information(self, "Готово", f"Отчёт сохранён:\n{path}")
+        except IndexError:
+            QMessageBox.critical(self, "Ошибка", "Недостаточно данных для отчёта по выбранной ОП и дате. Добавьте заявления с согласием.")
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Не удалось сформировать отчёт:\n{e}")
+
     def _norm_date(self, s):
         s = str(s).strip()
         if "-" in s:
@@ -210,6 +260,8 @@ class MainWindow(QMainWindow):
         program_id = None
         budget_seats = 0
         for row in programs:
+            if len(row) < 2:
+                continue
             if row[1] == selected_op:
                 program_id = row[0]
                 budget_seats = int(row[2]) if len(row) > 2 else 0
@@ -220,15 +272,15 @@ class MainWindow(QMainWindow):
             return
 
         applications = db.get_application()
-        apps_for_op_date = [a for a in applications if a[2] == program_id and self._norm_date(a[3]) == selected_date]
+        apps_for_op_date = [a for a in applications if len(a) >= 5 and a[2] == program_id and self._norm_date(a[3]) == selected_date]
         rows_data = []
         for app in apps_for_op_date:
             applicant_id = app[1]
-            priority = app[4]
+            priority = app[4] if len(app) > 4 else 1
             applicant_rows = db.get_applicant(applicant_id)
             if applicant_rows:
                 r = applicant_rows[0]
-                total_score = r[5]
+                total_score = r[5] if len(r) > 5 else 0
                 rows_data.append((applicant_id, total_score, priority))
 
         rows_data.sort(key=lambda x: x[1], reverse=True)
@@ -335,7 +387,7 @@ class MainWindow(QMainWindow):
 
         # Получаем текущие программы из БД для сопоставления имени с ID
         programs_list = db.get_program()
-        program_name_to_id = {row[1]: row[0] for row in programs_list}  # {name: id}
+        program_name_to_id = {row[1]: row[0] for row in programs_list if len(row) >= 2}
 
         # Подготовим списки для вставки
         applicants_to_add = []  # (physics_or_ict, russian, math, individual_achievements, total_score)
@@ -441,7 +493,7 @@ class MainWindow(QMainWindow):
     def _fill_programs_combo(self):
         self.op_combo.clear()
         rows = db.get_program()
-        names = [str(row[1]) for row in rows]
+        names = [str(row[1]) for row in rows if len(row) >= 2]
         self.op_combo.addItems(names)
 
     def dataset(self):
