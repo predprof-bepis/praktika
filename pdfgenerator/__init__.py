@@ -18,8 +18,7 @@ def _register_cyrillic_font():
     font_name = "CyrillicFont"
     for path in [
         Path("C:/Windows/Fonts/arial.ttf"),
-        Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
-        Path("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"),
+        Path("/usr/share/fonts/liberation-sans/LiberationSans-Regular.ttf"),
     ]:
         if path.exists():
             try:
