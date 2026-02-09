@@ -10,7 +10,7 @@ from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
-from datetime import datetime
+from datetime import datetime, date as date_type
 from pathlib import Path
 
 # Регистрация шрифта с кириллицей (чтобы не было чёрных квадратов)
@@ -44,11 +44,32 @@ class PDFGenerator:
     def generate_pdf(self, pdf_filename, date=None):
         if date is None:
             date = datetime.now()
-        if not isinstance(date, datetime):
-            try:
-                date = datetime.strptime(date, "%Y-%m-%d")
-            except Exception:
-                raise TypeError("date must be datetime or string YYYY-MM-DD")
+        if isinstance(date, datetime):
+            pass
+        elif isinstance(date, date_type):
+            date = datetime.combine(date, datetime.min.time())
+        elif isinstance(date, str):
+            date = date.strip()
+            for fmt in (
+                "%Y-%m-%d %H:%M:%S",
+                "%Y-%m-%d %H:%M",
+                "%Y-%m-%d",
+                "%d.%m.%Y",
+                "%d/%m/%Y",
+            ):
+                try:
+                    date = datetime.strptime(date, fmt)
+                    break
+                except ValueError:
+                    continue
+            else:
+                raise ValueError(
+                    f"date must be YYYY-MM-DD, DD.MM.YYYY or DD/MM/YYYY, got: {date!r}"
+                )
+        else:
+            raise TypeError(
+                f"date must be datetime, date or string (YYYY-MM-DD), got {type(date).__name__}: {date!r}"
+            )
         programs_df = pd.DataFrame(
             self.db.get_program(),
             columns=["id", "name", "budget_seats"]
@@ -108,7 +129,7 @@ class PDFGenerator:
             story.append(Spacer(1, 10))
             pass_score = self.dbman.count_pass_score(
                 [prog_name],
-                self.dbman.db_filter([prog_name], date=date.strftime("%Y-%m-%d"))
+                date=date.strftime("%Y-%m-%d")
             )
             pass_score_val = pass_score.get(prog_name)
             pass_score_display = "НЕДОБОР" if (pass_score_val is None or pass_score_val == 0) else pass_score_val
@@ -176,29 +197,49 @@ class PDFGenerator:
             story.append(prio_table)
             story.append(Spacer(1, 15))
 
-            story.append(Paragraph("<b>Абитуриенты с согласием (принят / не принят)</b>", self.styles["Heading2"]))
-            story.append(Spacer(1, 6))
-            table_data = [[
-                Paragraph("ID абитуриента", self.styles["Normal"]),
-                Paragraph("Сумма баллов", self.styles["Normal"]),
-                Paragraph("Приоритет", self.styles["Normal"]),
-                Paragraph("Принят", self.styles["Normal"]),
-            ]]
-            for row in table_rows:
-                table_data.append([
-                    Paragraph(str(row["applicant_id"]), self.styles["Normal"]),
-                    Paragraph(str(row["total_score"]), self.styles["Normal"]),
-                    Paragraph(str(int(row["priority"])), self.styles["Normal"]),
-                    Paragraph("Да" if row["accepted"] else "Нет", self.styles["Normal"]),
-                ])
-            table = Table(table_data, colWidths=[100, 100, 80, 80])
-            table.setStyle(TableStyle([
-                ("GRID", (0, 0), (-1, -1), 1, colors.black),
-                ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ]))
-            story.append(table)
+            # Ранее здесь выводился пофамильный список абитуриентов с согласием
+            # (принят / не принят). По требованиям заказчика этот список
+            # из отчёта убран, чтобы в PDF не было персональных данных
+            # абитуриентов с согласием. Агрегированная статистика остаётся ниже.
             story.append(Spacer(1, 25))
+
+        story.append(Paragraph("<b>Общая статистика по ОП (п.2.14.e)</b>", self.styles["Heading2"]))
+        story.append(Spacer(1, 10))
+        prog_names = ["pm", "ivt", "itss", "ib"]
+        header = [Paragraph("", self.styles["Normal"])] + [
+            Paragraph(p.upper() if p != "itss" else "ИТСС", self.styles["Normal"]) for p in prog_names
+        ]
+        header[1], header[2] = Paragraph("ПМ", self.styles["Normal"]), Paragraph("ИВТ", self.styles["Normal"])
+        header[3], header[4] = Paragraph("ИТСС", self.styles["Normal"]), Paragraph("ИБ", self.styles["Normal"])
+        rows_stats = [header]
+        programs_list = list(programs_df.itertuples(index=False))
+        for row_name, get_vals in [
+            ("Общее кол-во заявлений", lambda pid: len(apps_full[apps_full["program_id"] == pid])),
+            ("Количество мест на ОП", lambda pid: next((p.budget_seats for p in programs_list if p.id == pid), 0)),
+            ("Кол-во заявлений 1-го приоритета", lambda pid: len(apps_full[(apps_full["program_id"] == pid) & (apps_full["priority"] == 1)])),
+            ("Кол-во заявлений 2-го приоритета", lambda pid: len(apps_full[(apps_full["program_id"] == pid) & (apps_full["priority"] == 2)])),
+            ("Кол-во заявлений 3-го приоритета", lambda pid: len(apps_full[(apps_full["program_id"] == pid) & (apps_full["priority"] == 3)])),
+            ("Кол-во заявлений 4-го приоритета", lambda pid: len(apps_full[(apps_full["program_id"] == pid) & (apps_full["priority"] == 4)])),
+        ]:
+            row = [Paragraph(row_name, self.styles["Normal"])]
+            for p in programs_list:
+                row.append(Paragraph(str(get_vals(p.id)), self.styles["Normal"]))
+            rows_stats.append(row)
+        by_program = enrollment.get("by_program", {})
+        for prio in [1, 2, 3, 4]:
+            row = [Paragraph(f"Кол-во зачисленных {prio}-го приоритета", self.styles["Normal"])]
+            for p in programs_list:
+                lst = by_program.get(p.id, [])
+                row.append(Paragraph(str(sum(1 for x in lst if x.get("priority") == prio)), self.styles["Normal"]))
+            rows_stats.append(row)
+        table_stats = Table(rows_stats, colWidths=[180, 50, 50, 50, 50])
+        table_stats.setStyle(TableStyle([
+            ("GRID", (0, 0), (-1, -1), 1, colors.black),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ]))
+        story.append(table_stats)
+        story.append(Spacer(1, 20))
 
         doc.build(story)
 
@@ -207,12 +248,10 @@ class PDFGenerator:
         values = []
 
         for day in days:
-            score_dict = self.dbman.count_pass_score(
-                [program_name],
-                self.dbman.db_filter([program_name], date=day)
-            )
-            score = score_dict.get(program_name, 0)
-            values.append(score)
+            day_str = day if isinstance(day, str) else (day.strftime("%Y-%m-%d") if hasattr(day, "strftime") else str(day))
+            score_dict = self.dbman.count_pass_score([program_name], date=day_str)
+            score = score_dict.get(program_name, "НЕДОБОР")
+            values.append(score if isinstance(score, (int, float)) else 0)
 
         plt.figure()
         plt.plot(days, values, marker="o")

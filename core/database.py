@@ -33,7 +33,7 @@ class DBManager:
         for program in programs:
             if not onlyId:
                 res[program] = self.db.run('''
-                        SELECT applicant_id, consent, total_score FROM applications
+                        SELECT applicant_id, consent, priority, total_score FROM applications
                         LEFT JOIN applicants ON applications.applicant_id = applicants.id
                         WHERE date = ? AND
                         program_id = (
@@ -51,55 +51,66 @@ class DBManager:
                 ''', date, program)
             
         return res
-    
-    def _compare_applicants(self, applicant1: tuple, applicant2: tuple):
-            if applicant1[1] > applicant2[1]:
-                return 1
-            elif applicant1[1] < applicant2[1]:
-                return -1
+
+    def get_applications_for_date(self, date):
+        return self.db.run('''
+            SELECT a.applicant_id, a.program_id, a.priority, a.consent, ap.total_score
+            FROM applications a
+            JOIN applicants ap ON a.applicant_id = ap.id
+            WHERE a.date = ?
+        ''', date)
+
+    def _compute_global_enrollment(self, date):
+        rows = self.get_applications_for_date(date)
+        programs_rows = self.db.run('SELECT id, name, budget_seats FROM programs')
+        pid_to_name = {r[0]: r[1] for r in programs_rows}
+        budget = {r[0]: r[2] for r in programs_rows}
+        places_left = dict(budget)
+
+        with_consent = [(aid, pid, prio, cons, score) for aid, pid, prio, cons, score in rows if cons]
+        enrolled = {}
+        by_program = {pid: [] for pid in budget}
+
+        for priority in [1, 2, 3, 4]:
+            cand = [(r[0], r[1], r[4]) for r in with_consent if r[2] == priority and r[0] not in enrolled]
+            cand.sort(key=lambda x: (-x[2], x[0]))
+            for aid, pid, score in cand:
+                if pid not in places_left or places_left[pid] <= 0:
+                    continue
+                enrolled[aid] = pid
+                by_program[pid].append({"applicant_id": aid, "total_score": score, "priority": priority})
+                places_left[pid] -= 1
+
+        pass_scores = {}
+        for pid, name in pid_to_name.items():
+            lst = by_program.get(pid, [])
+            if len(lst) < self.places_count.get(name, 0):
+                pass_scores[name] = None
             else:
-                if applicant1[2] < applicant2[2]:
-                    return -1
-                elif applicant1[2] > applicant2[2]:
-                    return 1
-                else:
-                    return 0
-                
+                pass_scores[name] = min(r["total_score"] for r in lst) if lst else None
+        return pass_scores, by_program
+
     def count_accepted(self, data):
         count = 0
         for i in data:
             if i[1] == 1:
                 count += 1
-
         return count
 
-    def count_pass_score(self, programs: list, data: dict):
-        '''Подсчет проходного балла для каждой программы. data ужен обязательно с данными
-        из столбцов consent и total_score'''
-        from functools import cmp_to_key
-
-
-        res = dict()
-        for program in programs:
-            if program not in data.keys():
-                continue
-
-            program_data = data[program]
-            program_data = sorted(program_data, key=cmp_to_key(self._compare_applicants), reverse=True)
-
-            accepted = self.count_accepted(program_data)
-            if accepted >= self.places_count[program]:
-                res[program] = 0 # все места уже заняты
-                continue
-            else:
-                try: # подают больше заявок, чем мест
-                    score = program_data[self.places_count[program] - 1][2]
-                except IndexError:
-                    score =  0 # program_data[-1][2]
-
-            res[program] = score
-
-        return res
+    def count_pass_score(self, programs: list, date: str = None, data: dict = None):
+        if date is None and data:
+            return {p: "НЕДОБОР" for p in programs}
+        use_date = date
+        if use_date is None:
+            dates = self.db.run("SELECT DISTINCT date FROM applications")
+            use_date = dates[0][0] if dates else None
+        if use_date is None:
+            return {p: "НЕДОБОР" for p in programs}
+        pass_scores, _ = self._compute_global_enrollment(use_date)
+        return {
+            p: (pass_scores.get(p) if pass_scores.get(p) is not None else "НЕДОБОР")
+            for p in programs
+        }
 
     def get_places(self, programs: list, data: dict):
         res = {}

@@ -112,7 +112,7 @@ class DB:
 
     def add_applicant(self, data):
         '''в data указывать [<physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>]'''
-        self.run_many("INSERT INTO applicants (physics_or_ict, russian, math, individual_achievements, total_score) VALUES (?, ?, ?, ?, ?, ?)", *data)
+        self.run_many("INSERT INTO applicants (physics_or_ict, russian, math, individual_achievements, total_score) VALUES (?, ?, ?, ?, ?)", *data)
 
     def update_applicant_by_id(self, data):
         '''в дата указывать\n
