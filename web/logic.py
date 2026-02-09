@@ -28,3 +28,7 @@ def get_places_counts(date):
     programs = ["pm", "ivt", "itss", "ib"]
     data = db_manager.db_filter(programs, date)
     return db_manager.get_places(programs, data)
+
+
+def get_data(date, program):
+    return db_manager.db_filter(program, date)
