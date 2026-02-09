@@ -1,9 +1,15 @@
-from flask import render_template
+from flask import render_template, request
+import logic
+
 
 def add_routes(app):
-    @app.route('/', methods=['GET'])
+    @app.route('/', methods=['GET', 'POST'])
     def mainPage():
-        return render_template('index.html')
+        selected_date = request.form.get('date')
+        scores = logic.get_scores(selected_date)
+
+        dates = logic.get_dates()
+        return render_template('index.html', dates=dates, scores=scores)
     
     @app.route('/download-pdf', methods=['GET'])
     def downloadPdfPage():

@@ -10,7 +10,7 @@ from dbtools import DB
 
 
 class DBManager:
-    def __init__(self, fileName="database.db"):
+    def __init__(self, fileName="../database.db"):
         self.fileName = fileName
         self.db = DB(self.fileName)
 
@@ -20,6 +20,13 @@ class DBManager:
             "itss": 30,
             "ib": 20
         }
+
+    def get_available_dates(self) -> list:
+        res = self.db.run('''
+            SELECT DISTINCT date FROM applications
+        ''')
+        return res
+
 
     def db_filter(self, programs: list, date="2026-08-04", onlyId=False) -> dict:
         res = dict()

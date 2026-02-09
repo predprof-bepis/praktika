@@ -10,7 +10,7 @@ import sqlite3
 class DB:
     def __init__(self, filename="database.db", autosave=True):
         # Локальные переменные
-        self.con = sqlite3.connect(filename)
+        self.con = sqlite3.connect(filename, check_same_thread=False)
         self.cur = self.con.cursor()
         self.autosave = autosave
 

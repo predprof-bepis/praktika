@@ -152,3 +152,11 @@ button:hover{
     font-size: 25px;
     padding: 5px;
 }
+
+.select-date {
+    margin: 15px;
+}
+
+.select-date>select{
+    width: 120px;
+}
