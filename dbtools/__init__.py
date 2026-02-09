@@ -10,7 +10,7 @@ import sqlite3
 class DB:
     def __init__(self, filename="database.db", autosave=True):
         # Локальные переменные
-        self.con = sqlite3.connect(filename)
+        self.con = sqlite3.connect(filename, check_same_thread=False)
         self.cur = self.con.cursor()
         self.autosave = autosave
 
@@ -37,7 +37,7 @@ class DB:
             program_id INTEGER NOT NULL,
             date DATE NOT NULL,
             priority INTEGER NOT NULL CHECK (priority BETWEEN 1 AND 4),
-            consent INTEGER NOT NULL,
+            consent BOOLEAN NOT NULL,
         
             UNIQUE (applicant_id, program_id, date),
         
@@ -60,7 +60,18 @@ class DB:
     def add_programs(self, data):
         '''в data указывать в списке записи
            [<name>, <budget_seats>] - пример запись'''
+        if not data:
+            return
         self.run_many("INSERT INTO programs (name, budget_seats) VALUES (?, ?)", *data)
+        self.remove_duplicate_programs()
+
+    def remove_duplicate_programs(self):
+        self.cur.execute("""DELETE FROM programs WHERE id IN (
+            SELECT p1.id FROM programs p1
+            INNER JOIN programs p2 ON p1.name = p2.name AND p1.id > p2.id
+        )""")
+        if self.autosave:
+            self.con.commit()
 
     def update_program_by_id(self, data):
         '''в дата указывать\n
@@ -82,13 +93,13 @@ class DB:
            [<applicant_id>, <program_id>, <date>, <priority>, <consent>] - пример одной записи\n
            подавать в списке\n
         '''
-        self.run_many("INSERT INTO programs (applicant_id, program_id, date, priority, consent) VALUES (?, ?, ?, ?, ?)", *data)
+        self.run_many("INSERT INTO applications (applicant_id, program_id, date, priority, consent) VALUES (?, ?, ?, ?, ?)", *data)
 
     def update_application_by_id(self, data):
         '''в дата указывать\n
            [<applicant_id>, <program_id>, <date>, <priority>, <consent>, id записи] - пример одной записи\n
            подавать в списке\n'''
-        self.run_many("UPDATE programs SET applicant_id = ?, program_id = ?, date = ?, priority = ?, consent = ? WHERE id = ?", *data)
+        self.run_many("UPDATE applications SET applicant_id = ?, program_id = ?, date = ?, priority = ?, consent = ? WHERE id = ?", *data)
 
     # Работа с заявителями
     def get_applicant(self, idx=None):
@@ -100,17 +111,14 @@ class DB:
             return self.run("SELECT * FROM applicants WHERE id = ?;", idx)
 
     def add_applicant(self, data):
-        '''в дата указывать\n
-           [<physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>] - пример одной записи\n
-           подавать в списке\n
-        '''
-        self.run_many("INSERT INTO programs (physics_or_ict, russian, math, individual_achievements, total_score) VALUES (?, ?, ?, ?, ?)", *data)
+        '''в data указывать [<physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>]'''
+        self.run_many("INSERT INTO applicants (physics_or_ict, russian, math, individual_achievements, total_score) VALUES (?, ?, ?, ?, ?, ?)", *data)
 
-    def update_aplicant_by_id(self, data):
+    def update_applicant_by_id(self, data):
         '''в дата указывать\n
            [<physics_or_ict>, <russian>, <math>, <individual_achievements>, <total_score>, id записи] - пример одной записи\n
            подавать в списке\n'''
-        self.run_many("UPDATE programs SET physics_or_ict = ?, russian = ?, math = ?, individual_achievements = ?, total_score = ? WHERE id = ?", *data)
+        self.run_many("UPDATE applicants SET physics_or_ict = ?, russian = ?, math = ?, individual_achievements = ?, total_score = ? WHERE id = ?", *data)
 
 
     def run(self, query, *args):

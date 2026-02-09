@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Загрузить данные</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Загрузить данные</h1>
+    </header>
+    <main>
+        <div class="inner-main">
+            <nav>
+                <a href="./">На главную</a>
+            </nav>
+            <form class="download">
+                <h2>Выберите файл со своего компьютера:</h2>
+                <p>Файл может иметь расширения:<br>
+                .db, .sqlite, .sqlite3, .sql</p>
+                <input type="file" name="database_input" accept=".db, .sqlite, .sqlite3, .sql" required>
+                <button type="submit">Загрузить</button>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
