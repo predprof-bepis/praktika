@@ -95,7 +95,7 @@ class DBManager:
                 try: # подают больше заявок, чем мест
                     score = program_data[self.places_count[program] - 1][2]
                 except IndexError:
-                    score = program_data[-1][2]
+                    score =  0 # program_data[-1][2]
 
             res[program] = score
 

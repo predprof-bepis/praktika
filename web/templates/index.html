@@ -9,6 +9,7 @@
     <header>
         <h1>Анализ поступления абитуриентов</h1>
     </header>
+    <form method="POST">
     <main>
         <div class="inner-main">
             <nav>
@@ -17,7 +18,7 @@
             </nav>
 
             <div class="tables">
-                <form class="select-date" method="POST">
+                <div>
                     <h3>Выберите дату:</h3>
                     <select name="date">
                         {% for date in dates %}
@@ -25,7 +26,7 @@
                         {% endfor %}
                     </select>
                     <button type="submit">Показать информацию</button>
-                </form>
+                </div>
                 <table>
                     <tr>
                         <td class="headings">Дата обновления</td>
@@ -73,7 +74,7 @@
             </div>
 
             <div class="filter">
-                <form>
+                <div>
                     <h3>Отфильтровать данные по:</h3>
 
                     <select name="program">
@@ -83,7 +84,7 @@
                         <option value="ib">Информационная безопасность</option>
                     </select>
                     <button type="submit">Отфильтровать</button>
-                </form>
+                </div>
             </div>       
 
             <table>
@@ -92,15 +93,16 @@
                     <td class="headings">Общий счет</td>
                     <td class="headings">Поданы документы</td>
                 </tr>
+                {% for person in data[program] %}
                 <tr>
-                    {% for person in data[program] %}
                     <td>{{ person[0] }}</td>
                     <td>{{ person[1] }}</td>
                     <td>{{ person[2] }}</td>
-                    {% endfor %}
                 </tr>
+                {% endfor %}
             </table>
         </div>
     </main>
+    </form>
 </body>
 </html>
