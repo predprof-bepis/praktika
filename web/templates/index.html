@@ -96,8 +96,8 @@
                 {% for person in data[program] %}
                 <tr>
                     <td>{{ person[0] }}</td>
-                    <td>{{ person[1] }}</td>
-                    <td>{{ person[2] }}</td>
+                    <td>{{ person[3] if person[3] is not none else "—" }}</td>
+                    <td>{{ "Да" if person[1] == 1 else ("Нет" if person[1] == 0 else "—") }}</td>
                 </tr>
                 {% endfor %}
             </table>

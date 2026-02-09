@@ -14,9 +14,7 @@ db_manager = DBManager()
 
 def get_scores(date):
     programs = ["pm", "ivt", "itss", "ib"]
-    data = db_manager.db_filter(programs, date)
-    # print(data)
-    scores = db_manager.count_pass_score(programs, data)
+    scores = db_manager.count_pass_score(programs, date=date)
     return scores
 
 
