@@ -15,11 +15,16 @@ db_manager = DBManager()
 def get_scores(date):
     programs = ["pm", "ivt", "itss", "ib"]
     data = db_manager.db_filter(programs, date)
-    print(data)
+    # print(data)
     scores = db_manager.count_pass_score(programs, data)
-
     return scores
 
 
 def get_dates():
     return db_manager.get_available_dates() 
+
+
+def get_places_counts(date):
+    programs = ["pm", "ivt", "itss", "ib"]
+    data = db_manager.db_filter(programs, date)
+    return db_manager.get_places(programs, data)

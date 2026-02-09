@@ -65,7 +65,7 @@ class DBManager:
                 else:
                     return 0
                 
-    def count_accepted(self, data: list[tuple[int, int, int]]):
+    def count_accepted(self, data):
         count = 0
         for i in data:
             if i[1] == 1:
@@ -98,5 +98,12 @@ class DBManager:
                     score = program_data[-1][2]
 
             res[program] = score
+
+        return res
+
+    def get_places(self, programs: list, data: dict):
+        res = {}
+        for program in data.keys():
+            res[program] = len(data[program])
 
         return res
