@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Скачать CSV</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Скачать CSV</h1>
+    </header>
+    <main>
+        <div class="inner-main">
+            <nav>
+                <a href="./">На главную</a>
+            </nav>
+            <form class="download" method="POST">
+                <h2>Экспорт таблиц в CSV</h2>
+
+                <label for="dataset">Таблица:</label>
+                <select name="dataset" id="dataset" required>
+                    <option value="programs" selected>programs</option>
+                    <option value="applicants">applicants</option>
+                </select>
+
+                <button type="submit" style="margin-top: 15px;">Скачать CSV</button>
+
+                {% if message %}
+                <p style="margin-top: 15px; color: {% if success %}green{% else %}red{% endif %};">{{ message }}</p>
+                {% endif %}
+            </form>
+        </div>
+    </main>
+</body>
+</html>
+
