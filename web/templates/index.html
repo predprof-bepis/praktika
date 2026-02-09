@@ -9,6 +9,7 @@
     <header>
         <h1>Анализ поступления абитуриентов</h1>
     </header>
+    <form method="POST">
     <main>
         <div class="inner-main">
             <nav>
@@ -17,7 +18,7 @@
             </nav>
 
             <div class="tables">
-                <form class="select-date">
+                <div>
                     <h3>Выберите дату:</h3>
                     <select name="date">
                         {% for date in dates %}
@@ -25,7 +26,7 @@
                         {% endfor %}
                     </select>
                     <button type="submit">Показать информацию</button>
-                </form>
+                </div>
                 <table>
                     <tr>
                         <td class="headings">Дата обновления</td>
@@ -35,31 +36,31 @@
                         <td class="headings">Проходной балл</td>
                     </tr>
                     <tr>
-                        <td>20.01.2026</td>
+                        <td>{{ date }}</td>
                         <td>ПМ</td>
                         <td>40</td>
-                        <td>Нет данных</td>
+                        <td>{{ places["pm"] }}</td>
                         <td>{{ scores["pm"] }}</td>
                     </tr>
                     <tr>
-                        <td>20.01.2026</td>
+                        <td>{{ date }}</td>
                         <td>ИВТ</td>
                         <td>50</td>
-                        <td>Нет данных</td>
+                        <td>{{ places["ivt"] }}</td>
                         <td>{{ scores["ivt"] }}</td>
                     </tr>
                     <tr>
-                        <td>20.01.2026</td>
+                        <td>{{ date }}</td>
                         <td>ИТСС</td>
                         <td>30</td>
-                        <td>Нет данных</td>
+                        <td>{{ places["itss"] }}</td>
                         <td>{{ scores["itss"] }}</td>
                     </tr>
                     <tr>
-                        <td>20.01.2026</td>
+                        <td>{{ date }}</td>
                         <td>ИБ</td>
                         <td>20</td>
-                        <td>Нет данных</td>
+                        <td>{{ places["ib"] }}</td>
                         <td>{{ scores["ib"] }}</td>
                     </tr>
                 </table>
@@ -67,51 +68,41 @@
 
             <div class="list-header">
                 <h3>Список абитуриентов</h3>
-                <p>Еще не зачисленные идут в порядке убывания шанса поступления.</p>
+                <p>Абитуриенты идут в порядке убывания шанса поступления. Сначала идут те, кто
+                    подал все нужные документы и может быть зачислен, затем все остальные.
+                </p>
             </div>
 
             <div class="filter">
-                <form>
+                <div>
                     <h3>Отфильтровать данные по:</h3>
 
                     <select name="program">
-                        <option value="all" selected>Все</option>
                         <option value="pm">Прикладная математика</option>
                         <option value="ivt">Информатика и вычислительная техника</option>
                         <option value="itss">Инфокоммуникационные технологии и системы связи</option>
                         <option value="ib">Информационная безопасность</option>
                     </select>
-
-                    <select name="accepted">
-                        <option value="all" selected>Все абитуриенты</option>
-                        <option value="enrolled">Только зачисленные</option>
-                        <option value="not_enrolled">Только незачисленные</option>
-                    </select>
                     <button type="submit">Отфильтровать</button>
-                </form>
+                </div>
             </div>       
 
             <table>
                 <tr>
-                    <td class="headings">ПМ</td>
-                    <td class="headings">ИВТ</td>
-                    <td class="headings">ИТСС</td>
-                    <td class="headings">ИБ</td>
+                    <td class="headings">ID</td>
+                    <td class="headings">Общий счет</td>
+                    <td class="headings">Поданы документы</td>
                 </tr>
+                {% for person in data[program] %}
                 <tr>
-                    <td>Нет данных</td>
-                    <td>Нет данных</td>
-                    <td>Нет данных</td>
-                    <td>Нет данных</td>
+                    <td>{{ person[0] }}</td>
+                    <td>{{ person[1] }}</td>
+                    <td>{{ person[2] }}</td>
                 </tr>
-                <tr>
-                    <td>Нет данных</td>
-                    <td>Нет данных</td>
-                    <td>Нет данных</td>
-                    <td>Нет данных</td>
-                </tr>
+                {% endfor %}
             </table>
         </div>
     </main>
+    </form>
 </body>
 </html>
