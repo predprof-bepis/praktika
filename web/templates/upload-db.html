@@ -15,12 +15,30 @@
             <nav>
                 <a href="./">На главную</a>
             </nav>
-            <form class="download">
-                <h2>Выберите файл со своего компьютера:</h2>
-                <p>Файл может иметь расширения:<br>
-                .db, .sqlite, .sqlite3, .sql</p>
-                <input type="file" name="database_input" accept=".db, .sqlite, .sqlite3, .sql" required>
-                <button type="submit">Загрузить</button>
+            <form class="download" method="POST" enctype="multipart/form-data">
+                <h2>Импорт таблиц</h2>
+                <p>Выберите тип таблицы и загрузите CSV файл:</p>
+                
+                <label for="table_type">Тип таблицы:</label>
+                <select name="table_type" id="table_type" required>
+                    <option value="programs">Программы (programs)</option>
+                    <option value="applicants">Абитуриенты (applicants)</option>
+                    <option value="applications">Заявления (applications)</option>
+                </select>
+                
+                <p style="margin-top: 15px;">Формат CSV файла:</p>
+                <ul style="text-align: left; display: inline-block;">
+                    <li><strong>programs:</strong> name, budget_seats (или id, name, budget_seats)</li>
+                    <li><strong>applicants:</strong> physics_or_ict, russian, math, individual_achievements (или id, ...)</li>
+                    <li><strong>applications:</strong> applicant_id, program_id, date (YYYY-MM-DD), priority, consent (или id, ...)</li>
+                </ul>
+                
+                <input type="file" name="csv_file" accept=".csv" required style="margin-top: 15px;">
+                <button type="submit">Импортировать</button>
+                
+                {% if message %}
+                <p style="margin-top: 15px; color: {% if success %}green{% else %}red{% endif %};">{{ message }}</p>
+                {% endif %}
             </form>
         </div>
     </main>

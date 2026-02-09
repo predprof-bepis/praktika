@@ -98,12 +98,12 @@ def _rows_application(rows, db):
             except:
                 continue
 
+            program_id = int(i[1]) if i[1].isdecimal() else db.run("SELECT id FROM programs WHERE name = ?", i[1])[0][0]
             final.append([
                           int(i[0]),
-                          int(i[1]),
-                          int(i[2]) if i[2].isdec                          datetime.strptime(i[2], "%Y-%m-%d"),
-                          int(i[3]),imal() else db.run("SELECT id FROM programs WHERE name = ?", i[2])[0][0],
-                          datetime.strptime(i[3], "%Y-%m-%d"),
+                          program_id,
+                          datetime.strptime(i[2], "%Y-%m-%d"),
+                          int(i[3]),
                           int(i[4]),
                           int(i[5])
                           ])
@@ -113,14 +113,14 @@ def _rows_application(rows, db):
 def _rows_applicant(rows):
     final = []
     for row in rows:
-        if len(row) != 5:
+        if len(row) == 5:
             try:
-                return [int(row[0]), int(row[1]), int(row[2]), int(row[3]), int(row[4])]
+                final.append([int(row[0]), int(row[1]), int(row[2]), int(row[3]), int(row[4])])
             except (ValueError, TypeError):
                 continue
         elif len(row) == 4:
             try:
-                return [int(row[0]), int(row[1]), int(row[2]), int(row[3]), sum([int(row[0]), int(row[1]), int(row[2]), int(row[3])])]
+                final.append([int(row[0]), int(row[1]), int(row[2]), int(row[3]), sum([int(row[0]), int(row[1]), int(row[2]), int(row[3])])])
             except (ValueError, TypeError):
                 continue
     return final

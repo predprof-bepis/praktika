@@ -13,7 +13,6 @@ from reportlab.pdfbase.ttfonts import TTFont
 from datetime import datetime
 from pathlib import Path
 
-# Регистрация шрифта с кириллицей (чтобы не было чёрных квадратов)
 def _register_cyrillic_font():
     font_name = "CyrillicFont"
     for path in [
