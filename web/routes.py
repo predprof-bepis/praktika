@@ -1,5 +1,6 @@
-from flask import render_template, request
+from flask import render_template, request, send_file
 import logic
+import pdfgenerator
 
 
 def add_routes(app):
@@ -39,9 +40,16 @@ def add_routes(app):
                                 places=places,
                                 data=data)
     
-    @app.route('/download-pdf', methods=['GET'])
+    @app.route('/download-pdf', methods=['GET', 'POST'])
     def downloadPdfPage():
-        return render_template('download-pdf.html')
+        match request.method:
+            case "POST":
+                print(request.form.get("date"))
+                a = pdfgenerator.PDFGenerator(logic.db_manager.db, logic.db_manager)
+                a.generate_pdf("resultador.pdf", request.form.get("date"))
+                return send_file('resultador.pdf')
+            case "GET":
+                return render_template('download-pdf.html', dates=logic.get_dates())
     
     @app.route('/upload-db', methods=['GET', 'POST'])
     def uploadDbPage():

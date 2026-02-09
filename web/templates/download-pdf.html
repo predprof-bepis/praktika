@@ -15,11 +15,13 @@
             <nav>
                 <a href="./">На главную</a>
             </nav>
-            <form class="download">
+            <form class="download" method="POST">
                 <h2>Выберите дату и ОП*, по которой хотите скачать отчет:</h2>
                 
-                <select class="date">
-                    <option value="20.01.2026">20.01.2026 (последнее обновление)</option>
+                <select name="date">
+                    {% for date in dates %}
+                        <option value="{{ date[0] }}">{{date[0]}}</option>
+                    {% endfor %}
                 </select>
 
                 <select name="program">
