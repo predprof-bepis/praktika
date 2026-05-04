@@ -34,10 +34,8 @@ class Importer:
                 return
             # если в CSV есть id, вставляем его явно
             if len(rows[0]) == 3:
-                self.db.run_many(
-                    "INSERT INTO programs (id, name, budget_seats) VALUES (?, ?, ?)",
-                    *rows
-                )
+                insert = "INSERT OR REPLACE" if self.merge else "INSERT"
+                self.db.run_many(f"{insert} INTO programs (id, name, budget_seats) VALUES (?, ?, ?)", *rows)
             else:
                 self.db.add_programs(rows)
         elif self.table == Table.applications:
@@ -46,15 +44,16 @@ class Importer:
             if not rows:
                 return
             # простой импорт таблицы applications, с учётом id при наличии
+            insert = "INSERT OR REPLACE" if self.merge else "INSERT"
             if len(rows[0]) == 6:
                 self.db.run_many(
-                    "INSERT INTO applications (id, applicant_id, program_id, date, priority, consent) "
+                    f"{insert} INTO applications (id, applicant_id, program_id, date, priority, consent) "
                     "VALUES (?, ?, ?, ?, ?, ?)",
                     *rows
                 )
             else:
                 self.db.run_many(
-                    "INSERT INTO applications (applicant_id, program_id, date, priority, consent) "
+                    f"{insert} INTO applications (applicant_id, program_id, date, priority, consent) "
                     "VALUES (?, ?, ?, ?, ?)",
                     *rows
                 )
@@ -65,16 +64,17 @@ class Importer:
                 return
             # applicants: либо без id, либо с id в первой колонке
             if len(rows[0]) == 6:
+                insert = "INSERT OR REPLACE" if self.merge else "INSERT"
                 self.db.run_many(
-                    "INSERT INTO applicants (id, physics_or_ict, russian, math, individual_achievements, total_score) "
+                    f"{insert} INTO applicants (id, physics_or_ict, russian, math, individual_achievements, total_score) "
                     "VALUES (?, ?, ?, ?, ?, ?)",
-                    *rows
+                    *rows,
                 )
             else:
                 self.db.add_applicant(rows)
         elif self.table == Table.contest_list:
             data = data[1:] if _is_header(data[0]) else data
-            _import_contest_list(self.db, data)
+            _import_contest_list(self.db, data, merge=self.merge)
 
 
 def _is_header(row: list[str]):
@@ -173,7 +173,7 @@ def _rows_applicant(rows):
     return final
 
 
-def _import_contest_list(db, rows):
+def _import_contest_list(db, rows, merge=False):
     """
     Импорт CSV в формате contest_list (как мы его экспортируем):
     applicant_id, program, date, priority, consent,
@@ -237,10 +237,11 @@ def _import_contest_list(db, rows):
         )
 
     if applications:
+        insert = "INSERT OR REPLACE" if merge else "INSERT"
         db.run_many(
-            "INSERT INTO applications (applicant_id, program_id, date, priority, consent) "
+            f"{insert} INTO applications (applicant_id, program_id, date, priority, consent) "
             "VALUES (?, ?, ?, ?, ?)",
-            *applications
+            *applications,
         )
 
 

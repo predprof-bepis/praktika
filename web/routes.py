@@ -90,69 +90,102 @@ def add_routes(app):
     @app.route('/upload-db', methods=['GET', 'POST'])
     def uploadDbPage():
         if request.method == 'POST':
-            if 'csv_file' not in request.files:
-                return render_template('upload-db.html', 
-                                    message='Файл не выбран', 
-                                    success=False)
-            
-            file = request.files['csv_file']
-            table_type = request.form.get('table_type')
-            
-            if file.filename == '':
-                return render_template('upload-db.html', 
-                                    message='Файл не выбран', 
-                                    success=False)
-            
-            if not file.filename.endswith('.csv'):
-                return render_template('upload-db.html', 
-                                    message='Поддерживаются только CSV файлы', 
-                                    success=False)
+            action = request.form.get("action", "import_csv")
 
-            upload_folder = os.path.join(os.path.dirname(__file__), 'uploads')
+            if action == "upload_db":
+                if "db_file" not in request.files:
+                    return render_template("upload-db.html", message="Файл базы не выбран", success=False)
+                db_file = request.files["db_file"]
+                if not db_file.filename:
+                    return render_template("upload-db.html", message="Файл базы не выбран", success=False)
+
+                lower = db_file.filename.lower()
+                if not (lower.endswith(".db") or lower.endswith(".sqlite") or lower.endswith(".sqlite3")):
+                    return render_template("upload-db.html", message="Поддерживаются только .db/.sqlite/.sqlite3", success=False)
+
+                # database.db лежит в корне проекта; путь в DBManager: core/../database.db
+                db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "database.db"))
+                tmp_folder = os.path.join(os.path.dirname(__file__), "uploads")
+                os.makedirs(tmp_folder, exist_ok=True)
+                tmp_path = os.path.join(tmp_folder, secure_filename(db_file.filename))
+                db_file.save(tmp_path)
+
+                try:
+                    # Закрываем старое соединение (если есть), затем подменяем файл и переинициализируем DBManager
+                    try:
+                        logic.db_manager.db.con.close()
+                    except Exception:
+                        pass
+
+                    os.replace(tmp_path, db_path)
+                    from core.database import DBManager  # локальный импорт, чтобы избежать циклов
+                    logic.db_manager = DBManager()
+                    return render_template("upload-db.html", message="База успешно заменена", success=True)
+                except Exception as e:
+                    if os.path.exists(tmp_path):
+                        try:
+                            os.remove(tmp_path)
+                        except Exception:
+                            pass
+                    return render_template("upload-db.html", message=f"Ошибка замены базы: {str(e)}", success=False)
+
+            # default: import csv
+            if "csv_file" not in request.files:
+                return render_template("upload-db.html", message="Файл не выбран", success=False)
+
+            file = request.files["csv_file"]
+            table_type = request.form.get("table_type")
+            merge = request.form.get("merge") == "1"
+            truncate = request.form.get("truncate") == "1"
+
+            if not file.filename:
+                return render_template("upload-db.html", message="Файл не выбран", success=False)
+
+            if not file.filename.lower().endswith(".csv"):
+                return render_template("upload-db.html", message="Поддерживаются только CSV файлы", success=False)
+
+            upload_folder = os.path.join(os.path.dirname(__file__), "uploads")
             os.makedirs(upload_folder, exist_ok=True)
             filename = secure_filename(file.filename)
             filepath = os.path.join(upload_folder, filename)
             file.save(filepath)
-            
+
             try:
                 table_map = {
-                    'programs': Table.programs,
-                    'applicants': Table.applicants,
-                    'applications': Table.applications,
-                    'contest_list': Table.contest_list,
+                    "programs": Table.programs,
+                    "applicants": Table.applicants,
+                    "applications": Table.applications,
+                    "contest_list": Table.contest_list,
                 }
-                
+
                 if table_type not in table_map:
-                    return render_template('upload-db.html', 
-                                        message='Неверный тип таблицы', 
-                                        success=False)
+                    return render_template("upload-db.html", message="Неверный тип таблицы", success=False)
 
-                # для простоты: перед импортом всегда полностью очищаем выбранную таблицу,
-                # а импортёр вставляет данные (с id при наличии) как есть
-                match table_type:
-                    case "programs":
-                        logic.db_manager.db.run("DELETE FROM programs")
-                    case "applicants":
-                        logic.db_manager.db.run("DELETE FROM applicants")
-                    case "applications":
-                        logic.db_manager.db.run("DELETE FROM applications")
-                    case "contest_list":
-                        # для конкурсного списка очищаем both: applications + applicants
-                        logic.db_manager.db.run("DELETE FROM applications")
-                        logic.db_manager.db.run("DELETE FROM applicants")
+                if truncate:
+                    # Точечная очистка; по умолчанию НЕ чистим ничего.
+                    match table_type:
+                        case "programs":
+                            logic.db_manager.db.run("DELETE FROM programs")
+                        case "applicants":
+                            logic.db_manager.db.run("DELETE FROM applicants")
+                        case "applications":
+                            logic.db_manager.db.run("DELETE FROM applications")
+                        case "contest_list":
+                            # Для конкурсного списка безопаснее чистить только applications,
+                            # applicants переиспользуем/обновляем по id
+                            logic.db_manager.db.run("DELETE FROM applications")
 
-                importer = Importer(logic.db_manager.db, table_map[table_type], Mode.csv, merge=False)
+                importer = Importer(logic.db_manager.db, table_map[table_type], Mode.csv, merge=merge)
                 importer.import_db(filepath)
 
                 os.remove(filepath)
-                
-                return render_template('upload-db.html', 
-                                    message=f'Данные успешно импортированы в таблицу {table_type}', 
-                                    success=True)
+                return render_template(
+                    "upload-db.html",
+                    message=f"Импорт завершён: {table_type} ({'merge' if merge else 'insert'})",
+                    success=True,
+                )
             except Exception as e:
                 if os.path.exists(filepath):
                     os.remove(filepath)
-                return render_template('upload-db.html', 
-                                    message=f'Ошибка при импорте: {str(e)}', 
-                                    success=False)
+                return render_template("upload-db.html", message=f"Ошибка при импорте: {str(e)}", success=False)
         return render_template('upload-db.html')
