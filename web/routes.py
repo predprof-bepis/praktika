@@ -1,14 +1,11 @@
 from flask import render_template, request, send_file
 import logic
 import pdfgenerator
-<<<<<<< Updated upstream
-=======
 import os
 import csv
 import io
 from werkzeug.utils import secure_filename
 from dbtools.import_db import Importer, Mode, Table
->>>>>>> Stashed changes
 
 
 def add_routes(app):
@@ -92,8 +89,6 @@ def add_routes(app):
     
     @app.route('/upload-db', methods=['GET', 'POST'])
     def uploadDbPage():
-<<<<<<< Updated upstream
-=======
         if request.method == 'POST':
             if 'csv_file' not in request.files:
                 return render_template('upload-db.html', 
@@ -160,6 +155,4 @@ def add_routes(app):
                 return render_template('upload-db.html', 
                                     message=f'Ошибка при импорте: {str(e)}', 
                                     success=False)
-        
->>>>>>> Stashed changes
         return render_template('upload-db.html')

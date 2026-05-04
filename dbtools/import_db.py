@@ -131,50 +131,28 @@ def _rows_application(rows, db):
                 date_val = datetime.strptime(date_str, "%Y-%m-%d")
             except Exception:
                 continue
-<<<<<<< Updated upstream
-
-            final.append([
-                          int(i[0]),
-                          int(i[1]),
-                          int(i[2]) if i[2].isdec                          datetime.strptime(i[2], "%Y-%m-%d"),
-                          int(i[3]),imal() else db.run("SELECT id FROM programs WHERE name = ?", i[2])[0][0],
-                          datetime.strptime(i[3], "%Y-%m-%d"),
-                          int(i[4]),
-                          int(i[5])
-                          ])
-=======
             if prog.isdecimal():
                 program_id = int(prog)
             else:
                 program_id = db.run("SELECT id FROM programs WHERE name = ?", prog)[0][0]
             final.append([int(rid), int(aid), program_id, date_val, int(prio), int(cons)])
->>>>>>> Stashed changes
     return final
 
 
 def _rows_applicant(rows):
     final = []
     for row in rows:
-<<<<<<< Updated upstream
-        if len(row) != 5:
-            try:
-                return [int(row[0]), int(row[1]), int(row[2]), int(row[3]), int(row[4])]
-=======
         # 5 колонок: physics_or_ict, russian, math, individual_achievements, total_score
         if len(row) == 5:
             try:
                 final.append([
                     int(row[0]), int(row[1]), int(row[2]), int(row[3]), int(row[4])
                 ])
->>>>>>> Stashed changes
             except (ValueError, TypeError):
                 continue
         # 4 колонки: без total_score — считаем сами
         elif len(row) == 4:
             try:
-<<<<<<< Updated upstream
-                return [int(row[0]), int(row[1]), int(row[2]), int(row[3]), sum([int(row[0]), int(row[1]), int(row[2]), int(row[3])])]
-=======
                 p, r, m, ia = int(row[0]), int(row[1]), int(row[2]), int(row[3])
                 total = p + r + m + ia
                 final.append([p, r, m, ia, total])
@@ -190,7 +168,6 @@ def _rows_applicant(rows):
                 ia = int(row[4])
                 total = int(row[5])
                 final.append([aid, p, r, m, ia, total])
->>>>>>> Stashed changes
             except (ValueError, TypeError):
                 continue
     return final
